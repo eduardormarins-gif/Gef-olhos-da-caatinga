@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Olhos da Caatinga · Geoportal</title>
+  <meta name="description" content="Geoportal da consulta pública para criação de Unidade de Conservação em Olho d'Água do Casado (AL).">
+  <meta name="theme-color" content="#1F4F5F">
+  <!-- Prévia ao compartilhar o link (WhatsApp, redes sociais). A imagem é ajustada na publicação (Etapa 9). -->
+  <meta property="og:title" content="Olhos da Caatinga · Geoportal">
+  <meta property="og:description" content="Consulta pública: três propostas de Unidade de Conservação em Olho d'Água do Casado (AL). Veja no mapa e dê sua opinião.">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <link rel="icon" type="image/png" href="img/favicon.png">
+
+  <!-- Fontes: Montserrat (mesma do logo) e Source Sans 3 (textos). Sem internet, usa a fonte do sistema. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap">
+
+  <!-- Leaflet 1.9.4 (cópia local na pasta /lib) -->
+  <link rel="stylesheet" href="lib/leaflet/leaflet.css">
+  <link rel="stylesheet" href="css/estilo.css">
+</head>
+<body>
+  <noscript>
+    <p class="aviso-noscript">Este mapa precisa do JavaScript ativado no navegador.</p>
+  </noscript>
+
+  <!-- ===================== CABEÇALHO ===================== -->
+  <header class="cabecalho">
+    <button class="botao-menu" id="botao-painel" type="button" aria-controls="painel" aria-expanded="true" title="Mostrar ou esconder as camadas">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <span class="so-leitor">Camadas</span>
+    </button>
+
+    <h1 class="marca-h1">
+      <a class="marca" href="#" title="Voltar à visão do município">
+        <img src="img/logo-olho.png" alt="">
+        <span>
+          <strong id="titulo">Olhos da Caatinga</strong>
+          <small id="subtitulo">Geoportal · Olho d'Água do Casado, Alagoas</small>
+        </span>
+      </a>
+    </h1>
+
+    <div class="cabecalho-direita">
+      <div class="logos-cabecalho" id="logos-cabecalho" aria-label="Instituições"></div>
+      <button class="botao-sobre" id="botao-sobre" type="button">Sobre</button>
+    </div>
+  </header>
+
+  <div class="corpo">
+    <!-- ===================== BARRA LATERAL ===================== -->
+    <aside class="painel" id="painel" aria-label="Camadas do mapa">
+      <div class="painel-rolagem">
+        <!-- Busca: localidades, propostas, assentamentos, municípios ou coordenadas -->
+        <div class="busca" role="search">
+          <label for="campo-busca" class="so-leitor">Buscar no mapa</label>
+          <svg class="busca-icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4.5-4.5"/></svg>
+          <input type="search" id="campo-busca" placeholder="Buscar povoado ou proposta" autocomplete="off"
+                 role="combobox" aria-expanded="false" aria-controls="resultados-busca" aria-autocomplete="list">
+          <ul class="resultados-busca" id="resultados-busca" role="listbox" aria-label="Resultados da busca" hidden></ul>
+          <div class="so-leitor" id="anuncio-busca" aria-live="polite"></div>
+        </div>
+
+        <section class="chamada">
+          <span class="etiqueta" id="chamada-titulo">Consulta pública</span>
+          <p id="chamada-texto"></p>
+          <button type="button" class="botao-opiniao" data-opiniao="">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H9l-5 4z"/></svg>
+            <span id="texto-opiniao">Dê sua opinião</span>
+          </button>
+        </section>
+
+        <!-- Os grupos de camadas são montados pelo mapa.js a partir do config.js -->
+        <nav id="lista-camadas" class="lista-camadas"></nav>
+
+        <section class="grupo grupo-base">
+          <h2 class="grupo-titulo-fixo">Mapa base</h2>
+          <div class="item-base">
+            <span class="miniatura-satelite" aria-hidden="true"></span>
+            <div>
+              <strong>Imagem de satélite</strong>
+              <small>Esri World Imagery</small>
+            </div>
+            <label class="chave" title="Nomes de lugares sobre a imagem">
+              <input type="checkbox" id="chave-rotulos" checked>
+              <span class="chave-trilho"></span>
+              <span class="so-leitor">Nomes de lugares</span>
+            </label>
+          </div>
+          <small class="nota">A chave mostra ou esconde os nomes de lugares.</small>
+        </section>
+
+        <details class="grupo">
+          <summary>
+            <h2 class="grupo-titulo">Baixar dados</h2>
+            <svg class="seta" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+          </summary>
+          <p class="nota-download">GeoJSON abre no QGIS; KML abre no Google Earth. Sistema de referência: WGS 84 (EPSG:4326).</p>
+          <ul class="lista-download" id="lista-download"></ul>
+        </details>
+      </div>
+
+      <footer class="painel-rodape" id="painel-rodape"></footer>
+    </aside>
+
+    <!-- ===================== MAPA ===================== -->
+    <main class="area-mapa">
+      <div id="mapa" aria-label="Mapa interativo"></div>
+      <div class="coordenadas" id="coordenadas" aria-live="off">Passe o mouse sobre o mapa</div>
+
+      <!-- Painel da medição (aparece ao usar a régua ou a área) -->
+      <div class="medicao" id="medicao" role="status" hidden>
+        <div>
+          <small id="medicao-tipo">Distância</small>
+          <strong id="medicao-valor">Clique no mapa para começar</strong>
+        </div>
+        <button type="button" id="medicao-concluir">Concluir</button>
+        <button type="button" id="medicao-limpar" class="secundario">Limpar</button>
+      </div>
+
+      <!-- Cabeçalho que só aparece na impressão -->
+      <div class="impressao-cabecalho" aria-hidden="true">
+        <img src="img/logo-olho.png" alt="">
+        <div>
+          <strong>Olhos da Caatinga</strong>
+          <span id="impressao-subtitulo">Olho d'Água do Casado, Alagoas</span>
+        </div>
+        <div class="impressao-logos" id="impressao-logos"></div>
+      </div>
+      <div class="impressao-legenda" id="impressao-legenda" aria-hidden="true"></div>
+    </main>
+  </div>
+
+  <!-- ===================== JANELA "SOBRE" ===================== -->
+  <dialog class="janela" id="janela-sobre" aria-labelledby="sobre-titulo">
+    <div class="janela-topo">
+      <h2 id="sobre-titulo">Sobre o projeto</h2>
+      <button type="button" class="fechar" id="fechar-sobre" aria-label="Fechar">×</button>
+    </div>
+    <div class="janela-conteudo">
+      <p>
+        O <strong>Olhos da Caatinga</strong> reúne as informações geográficas da consulta pública
+        para a criação de uma Unidade de Conservação em Olho d'Água do Casado, no sertão de Alagoas,
+        na região dos cânions do Rio São Francisco.
+      </p>
+      <p>
+        Nesta fase, o mapa apresenta <strong>três propostas de área</strong> para debate com a população
+        e com os técnicos da prefeitura. Ao final do processo, ficará disponível o limite definitivo da unidade escolhida.
+      </p>
+      <h3>Fontes dos dados</h3>
+      <table class="tabela-fontes" id="tabela-fontes"></table>
+      <h3>Realização</h3>
+      <div class="logos-sobre" id="logos-sobre"></div>
+    </div>
+  </dialog>
+
+  <!-- ===================== JANELA "OPINIÃO" (formulário em preparação) ===================== -->
+  <dialog class="janela janela-pequena" id="janela-opiniao" aria-labelledby="opiniao-titulo">
+    <div class="janela-topo">
+      <h2 id="opiniao-titulo">Dê sua opinião</h2>
+      <button type="button" class="fechar" id="fechar-opiniao" aria-label="Fechar">×</button>
+    </div>
+    <div class="janela-conteudo">
+      <p id="opiniao-texto"></p>
+      <button type="button" class="botao-primario" id="ok-opiniao">Entendi</button>
+    </div>
+  </dialog>
+
+  <div id="aviso" class="aviso" role="alert" hidden>
+    Não foi possível carregar os dados do mapa. Extraia a pasta do .zip (botão direito →
+    <strong>Extrair tudo</strong>) e abra o <strong>index.html</strong> da pasta extraída.
+  </div>
+
+  <!-- Ordem importa: Leaflet → dados → configurações → mapa -->
+  <script src="lib/leaflet/leaflet.js"></script>
+  <script src="dados/estados.js"></script>
+  <script src="dados/municipios_al.js"></script>
+  <script src="dados/limite_municipal.js"></script>
+  <script src="dados/ucs_existentes.js"></script>
+  <script src="dados/assentamentos.js"></script>
+  <script src="dados/localidades.js"></script>
+  <script src="dados/propostas_uc.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/mapa.js"></script>
+  <script src="js/ferramentas.js"></script>
+</body>
+</html>
